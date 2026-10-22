@@ -8,6 +8,9 @@ export const SLOT = '#';
 export interface MathTemplate {
 	label: string;
 	latex: string;
+	// What empty slots are filled with. Defaults to `\square`, which only
+	// exists in math mode, so text-mode slots need plain text instead.
+	placeholder?: string;
 }
 
 export interface TemplateCategory {
@@ -30,7 +33,7 @@ export const CATEGORIES: TemplateCategory[] = [
 			{ label: 'Superscript', latex: '{#}^{#}' },
 			{ label: 'Subscript', latex: '{#}_{#}' },
 			{ label: 'Sub- and superscript', latex: '{#}_{#}^{#}' },
-			{ label: 'Text', latex: '\\text{#}' },
+			{ label: 'Text', latex: '\\text{#}', placeholder: 'text' },
 		],
 	},
 	{

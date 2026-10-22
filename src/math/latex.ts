@@ -18,7 +18,11 @@ export interface Expansion {
  * `selection` (if any), the remaining slots become placeholders, and the
  * first placeholder is selected so typing replaces it.
  */
-export function expandTemplate(template: string, selection = ''): Expansion {
+export function expandTemplate(
+	template: string,
+	selection = '',
+	placeholder = PLACEHOLDER,
+): Expansion {
 	const parts = template.split(SLOT);
 	if (parts.length === 1) {
 		// A plain symbol: keep `\alpha` from merging with a following letter.
@@ -27,25 +31,26 @@ export function expandTemplate(template: string, selection = ''): Expansion {
 	}
 
 	let text = parts[0] ?? '';
+	let first: number | undefined;
 	for (let i = 1; i < parts.length; i++) {
-		text += i === 1 && selection ? selection : PLACEHOLDER;
+		if (i === 1 && selection) {
+			text += selection;
+		} else {
+			first ??= text.length;
+			text += placeholder;
+		}
 		text += parts[i];
 	}
 
-	const first = text.search(PLACEHOLDER_RE);
-	if (first === -1) {
+	if (first === undefined) {
 		return { text, selectFrom: text.length, selectTo: text.length };
 	}
-	return {
-		text,
-		selectFrom: first,
-		selectTo: first + PLACEHOLDER.length,
-	};
+	return { text, selectFrom: first, selectTo: first + placeholder.length };
 }
 
 /** LaTeX used to draw a template on its palette button. */
-export function previewLatex(template: string): string {
-	return template.split(SLOT).join(PLACEHOLDER);
+export function previewLatex(template: string, placeholder = PLACEHOLDER): string {
+	return template.split(SLOT).join(placeholder);
 }
 
 export interface MathRegion {

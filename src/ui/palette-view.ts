@@ -90,14 +90,14 @@ export class PaletteView extends ItemView {
 
 	private drawButton(parent: HTMLElement, template: MathTemplate): void {
 		const button = parent.createEl('button', { cls: 'latex-canvas-button' });
-		button.appendChild(renderMath(previewLatex(template.latex), false));
+		button.appendChild(renderMath(previewLatex(template.latex, template.placeholder), false));
 		// Show the code behind each button so users pick up LaTeX as they go.
 		const code = template.latex.split(SLOT).join('…');
 		setTooltip(button, template.label === template.latex ? code : `${template.label}: ${code}`);
 
 		this.keepEditorFocus(button);
 		button.addEventListener('click', () =>
-			this.withEditor((editor) => insertTemplate(editor, template.latex)),
+			this.withEditor((editor) => insertTemplate(editor, template)),
 		);
 	}
 

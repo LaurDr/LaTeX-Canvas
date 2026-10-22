@@ -5,15 +5,20 @@ import {
 	findNextPlaceholder,
 	PLACEHOLDER,
 } from './latex';
+import { MathTemplate } from './templates';
 
 /**
  * Inserts a palette template at the cursor. Outside of an equation the result
  * is wrapped in `$…$` so a single click always produces rendered math.
  */
-export function insertTemplate(editor: Editor, template: string): void {
+export function insertTemplate(editor: Editor, template: MathTemplate): void {
 	const from = editor.posToOffset(editor.getCursor('from'));
 	const inMath = findMathAt(editor.getValue(), from) !== null;
-	const expansion = expandTemplate(template, editor.getSelection());
+	const expansion = expandTemplate(
+		template.latex,
+		editor.getSelection(),
+		template.placeholder,
+	);
 
 	const text = inMath ? expansion.text : `$${expansion.text}$`;
 	const shift = inMath ? 0 : 1;
