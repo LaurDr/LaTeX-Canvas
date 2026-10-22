@@ -16,6 +16,36 @@ export interface MathTemplate {
 export interface TemplateCategory {
 	name: string;
 	templates: MathTemplate[];
+	// Use wider buttons for templates whose previews are long.
+	wide?: boolean;
+}
+
+// A matrix-like environment whose size is picked in the palette.
+export interface MatrixKind {
+	label: string;
+	env: string;
+	// Fixed number of columns, e.g. `cases` is always "value & condition".
+	columns?: number;
+}
+
+export interface MatrixCategory {
+	name: string;
+	matrices: MatrixKind[];
+}
+
+export const MAX_MATRIX_SIZE = 6;
+
+export function matrixTemplate(
+	kind: MatrixKind,
+	rows: number,
+	columns: number,
+): MathTemplate {
+	const row = Array<string>(kind.columns ?? columns).fill(SLOT).join(' & ');
+	const body = Array<string>(rows).fill(row).join(' \\\\ ');
+	return {
+		label: kind.label,
+		latex: `\\begin{${kind.env}} ${body} \\end{${kind.env}}`,
+	};
 }
 
 const symbols = (label: string, commands: string[]): TemplateCategory => ({
@@ -23,7 +53,7 @@ const symbols = (label: string, commands: string[]): TemplateCategory => ({
 	templates: commands.map((latex) => ({ label: latex, latex })),
 });
 
-export const CATEGORIES: TemplateCategory[] = [
+export const CATEGORIES: (TemplateCategory | MatrixCategory)[] = [
 	{
 		name: 'Structures',
 		templates: [
@@ -38,6 +68,7 @@ export const CATEGORIES: TemplateCategory[] = [
 	},
 	{
 		name: 'Big operators',
+		wide: true,
 		templates: [
 			{ label: 'Sum', latex: '\\sum_{#}^{#} #' },
 			{ label: 'Product', latex: '\\prod_{#}^{#} #' },
@@ -71,27 +102,19 @@ export const CATEGORIES: TemplateCategory[] = [
 	},
 	{
 		name: 'Matrices & cases',
-		templates: [
-			{
-				label: '2×2 matrix ( )',
-				latex: '\\begin{pmatrix} # & # \\\\ # & # \\end{pmatrix}',
-			},
-			{
-				label: '2×2 matrix [ ]',
-				latex: '\\begin{bmatrix} # & # \\\\ # & # \\end{bmatrix}',
-			},
-			{
-				label: 'Determinant',
-				latex: '\\begin{vmatrix} # & # \\\\ # & # \\end{vmatrix}',
-			},
-			{
-				label: 'Cases',
-				latex: '\\begin{cases} # & # \\\\ # & # \\end{cases}',
-			},
+		matrices: [
+			{ label: 'Matrix ( )', env: 'pmatrix' },
+			{ label: 'Matrix [ ]', env: 'bmatrix' },
+			{ label: 'Matrix { }', env: 'Bmatrix' },
+			{ label: 'Determinant', env: 'vmatrix' },
+			{ label: 'Norm', env: 'Vmatrix' },
+			{ label: 'Matrix without brackets', env: 'matrix' },
+			{ label: 'Cases (uses the rows only)', env: 'cases', columns: 2 },
 		],
 	},
 	{
 		name: 'Functions',
+		wide: true,
 		templates: ['sin', 'cos', 'tan', 'log', 'ln', 'exp', 'min', 'max'].map(
 			(name) => ({ label: name, latex: `\\${name}\\left( # \\right)` }),
 		),

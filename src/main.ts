@@ -64,11 +64,15 @@ export default class LatexCanvasPlugin extends Plugin {
 			if (views.length === 0) return;
 
 			const doc = state.doc.toString();
-			const region = findMathAt(doc, state.selection.main.head);
-			const source = region
-				? doc.slice(region.contentFrom, region.contentTo)
-				: null;
-			views.forEach((view) => view.showEquation(source));
+			const { from, to, head } = state.selection.main;
+			const region = findMathAt(doc, head);
+			const equation = region && {
+				source: doc.slice(region.contentFrom, region.contentTo),
+				contentFrom: region.contentFrom,
+				selectionFrom: from,
+				selectionTo: to,
+			};
+			views.forEach((view) => view.showEquation(equation));
 		},
 		150,
 		true,

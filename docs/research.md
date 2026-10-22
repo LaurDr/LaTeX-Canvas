@@ -175,6 +175,18 @@ environments, where a GUI helps beginners most.
   hotkey.
 - **Live preview** of the equation under the cursor, with its source, updated
   through a CM6 `updateListener`.
+- **Clickable slots in the preview.** Each `\square` is rendered as
+  `\mmlToken{mi}[class="mjx-latex-canvas-slot-N"]{◻}` (base TeX in MathJax 3
+  and 4), so the n-th rendered box can be found and mapped back to the n-th
+  `\square` in the note. The DOM order cannot be used for this: MathJax draws
+  superscripts before subscripts and upper bounds before lower ones. If tagging
+  fails, the preview falls back to plain, non-clickable rendering.
+- **Matrix size picker.** Hover and click a 6 × 6 grid to choose rows ×
+  columns, then click a bracket style (`pmatrix`, `bmatrix`, `Bmatrix`,
+  `vmatrix`, `Vmatrix`, `matrix`, `cases`).
+- Rendered math in the palette ignores the mouse except for the slots.
+  MathJax 4 can attach its own click handling, which otherwise swallows clicks
+  on the buttons.
 - The pure logic is in `src/math/` (templates, a `$`/`$$` scanner and slot
   handling), which can be unit-tested without Obsidian.
 
@@ -194,8 +206,8 @@ Known limitations:
 3. Add settings: inline or display by default, which categories to show,
    recently used symbols.
 4. Make the right-click item context-aware ("Edit this equation…").
-5. Prototype structured editing for matrices (add or remove rows and columns,
-   change bracket type).
+5. Structured editing of existing matrices (add or remove rows and columns,
+   change bracket type). Today the size is only chosen before inserting.
 6. Add `EditorSuggest`-based learning hints.
 7. Pick a license, add a test runner (for example vitest) for `src/math/`, and
    set up a release workflow.

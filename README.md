@@ -16,7 +16,11 @@ of people who type LaTeX directly: no default hotkeys, no key remapping.
   **Next empty slot** to jump to the next one (also available as a command you
   can bind to a hotkey).
 - Hover a button to see the LaTeX behind it.
-- Live preview of the equation under the cursor.
+- Live preview of the equation under the cursor. **Click a `□` in the preview**
+  to select that slot in the note, then type to fill it. The selected slot is
+  highlighted.
+- **Matrices of any size up to 6 × 6:** pick rows × columns on the size grid,
+  then click a bracket style. Cases use the row count only.
 
 ## Development
 

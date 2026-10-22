@@ -152,9 +152,32 @@ export function findNextPlaceholder(
 	region: MathRegion,
 	offset: number,
 ): number {
-	const source = doc.slice(region.contentFrom, region.contentTo);
-	const offsets = [...source.matchAll(PLACEHOLDER_RE)].map(
-		(m) => region.contentFrom + m.index,
-	);
+	const offsets = placeholderOffsets(
+		doc.slice(region.contentFrom, region.contentTo),
+	).map((o) => region.contentFrom + o);
 	return offsets.find((o) => o >= offset) ?? offsets[0] ?? -1;
+}
+
+/** Offsets of every placeholder in an equation's `source`. */
+export function placeholderOffsets(source: string): number[] {
+	return [...source.matchAll(PLACEHOLDER_RE)].map((m) => m.index);
+}
+
+// The `mjx-` prefix keeps the class if MathJax's `safe` extension is active.
+export const SLOT_CLASS_PREFIX = 'mjx-latex-canvas-slot-';
+
+/**
+ * Rewrites the placeholders so the n-th one renders with the class
+ * `SLOT_CLASS_PREFIX + n` and can be found in the rendered output.
+ * `\mmlToken` is part of MathJax's base TeX package (MathJax 3 and 4), unlike
+ * `\class`, which needs the optional `html` extension. The rendered DOM order
+ * cannot be used instead: MathJax draws superscripts before subscripts.
+ */
+export function tagPlaceholders(source: string): string {
+	let n = 0;
+	return source.replace(
+		PLACEHOLDER_RE,
+		() =>
+			`{\\mmlToken{mi}[mathvariant="normal",class="${SLOT_CLASS_PREFIX}${n++}"]{\u25FB}}`,
+	);
 }
