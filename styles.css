@@ -1,0 +1,52 @@
+.latex-canvas-palette {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.latex-canvas-current {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+}
+
+.latex-canvas-current-preview {
+	min-height: 3em;
+	overflow-x: auto;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.latex-canvas-current-preview mjx-container {
+	color: var(--text-normal);
+	font-size: var(--font-text-size);
+}
+
+.latex-canvas-current-source {
+	white-space: pre-wrap;
+	word-break: break-all;
+	font-size: var(--font-ui-smaller);
+}
+
+.latex-canvas-category > summary {
+	cursor: var(--cursor);
+	font-weight: var(--font-semibold);
+	margin-bottom: var(--size-4-2);
+}
+
+.latex-canvas-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(3.25em, 1fr));
+	gap: var(--size-4-1);
+}
+
+.latex-canvas-button {
+	height: auto;
+	min-height: 2.5em;
+	padding: var(--size-4-1);
+	overflow: hidden;
+}
