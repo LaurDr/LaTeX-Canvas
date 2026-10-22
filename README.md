@@ -19,6 +19,10 @@ of people who type LaTeX directly: no default hotkeys, no key remapping.
 - Live preview of the equation under the cursor. **Click a `□` in the preview**
   to select that slot in the note, then type to fill it. The selected slot is
   highlighted.
+- **Operators and relations adapt to the cursor:** each side gets a `□` only
+  when it is empty. Nothing there yet gives `$□ \neq □$`; at the end of
+  `$2+2$` you get `$2+2 \div □$`. `\forall`, `\exists` and `\neg` only take a
+  `□` on the right.
 - **Matrices of any size up to 6 × 6:** pick rows × columns on the size grid,
   then click a bracket style. Cases use the row count only.
 

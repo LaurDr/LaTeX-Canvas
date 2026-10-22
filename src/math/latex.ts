@@ -13,39 +13,125 @@ export interface Expansion {
 	selectTo: number;
 }
 
+/** The equation source around the insertion point (both empty outside math). */
+export interface InsertContext {
+	before: string;
+	after: string;
+}
+
+const OUTSIDE_MATH: InsertContext = { before: '', after: '' };
+
 /**
  * Turns a template into the text to insert. The first slot is filled with
  * `selection` (if any), the remaining slots become placeholders, and the
  * first placeholder is selected so typing replaces it.
+ *
+ * A bare slot at the edge of a template (`# \neq #`, the summand of
+ * `\sum_{#}^{#} #`) is an operand: it is left out when the equation already
+ * has an operand on that side of the cursor, so `2+2|` becomes
+ * `2+2 \div \square` rather than `2+2\square \div \square`.
  */
 export function expandTemplate(
 	template: string,
 	selection = '',
 	placeholder = PLACEHOLDER,
+	context: InsertContext = OUTSIDE_MATH,
 ): Expansion {
 	const parts = template.split(SLOT);
-	if (parts.length === 1) {
-		// A plain symbol: keep `\alpha` from merging with a following letter.
-		const text = /\\[a-zA-Z]+$/.test(template) ? template + ' ' : template;
+	const slots = parts.length - 1;
+	if (slots === 0) {
+		const text = withSeparator(template, context.after);
 		return { text, selectFrom: text.length, selectTo: text.length };
 	}
 
-	let text = parts[0] ?? '';
+	const last = slots - 1;
+	const dropFirst =
+		!selection &&
+		parts[0] === '' &&
+		/^\s/.test(parts[1] ?? '') &&
+		hasOperandBefore(context.before);
+	const dropLast =
+		!(last === 0 && selection) &&
+		parts[slots] === '' &&
+		/\s$/.test(parts[last] ?? '') &&
+		hasOperandAfter(context.after);
+	// Keep exactly one space between the operator and the existing operand.
+	if (dropFirst) {
+		parts[1] = (/\s$/.test(context.before) ? '' : ' ') + (parts[1] ?? '').trimStart();
+	}
+	if (dropLast) {
+		parts[last] = (parts[last] ?? '').trimEnd() + (/^\s/.test(context.after) ? '' : ' ');
+	}
+
+	let text = '';
 	let first: number | undefined;
-	for (let i = 1; i < parts.length; i++) {
-		if (i === 1 && selection) {
+	for (let i = 0; i < slots; i++) {
+		text += parts[i];
+		if ((i === 0 && dropFirst) || (i === last && dropLast)) continue;
+		if (i === 0 && selection) {
 			text += selection;
 		} else {
 			first ??= text.length;
 			text += placeholder;
 		}
-		text += parts[i];
 	}
+	text = withSeparator(text + (parts[slots] ?? ''), context.after);
 
 	if (first === undefined) {
 		return { text, selectFrom: text.length, selectTo: text.length };
 	}
 	return { text, selectFrom: first, selectTo: first + placeholder.length };
+}
+
+/**
+ * Adds a space only where one is needed: `\alpha` followed by `x` would
+ * read as `\alphax`. A trailing space before the closing `$` would stop
+ * Obsidian from rendering inline math, so none is added otherwise.
+ */
+function withSeparator(text: string, after: string): string {
+	return /\\[a-zA-Z]+$/.test(text) && /^[a-zA-Z]/.test(after) ? text + ' ' : text;
+}
+
+// Commands that sit between operands (`a \leq b`).
+const BINARY_COMMANDS = new Set([
+	'pm', 'mp', 'cdot', 'times', 'div', 'circ', 'ast', 'star', 'cup', 'cap',
+	'setminus', 'oplus', 'otimes', 'wedge', 'vee', 'land', 'lor',
+	'neq', 'ne', 'leq', 'le', 'geq', 'ge', 'll', 'gg', 'approx', 'equiv',
+	'sim', 'simeq', 'cong', 'propto', 'in', 'notin', 'ni', 'subset',
+	'subseteq', 'supset', 'supseteq', 'to', 'gets', 'leftarrow',
+	'rightarrow', 'Leftarrow', 'Rightarrow', 'leftrightarrow',
+	'Leftrightarrow', 'mapsto', 'implies', 'impliedby', 'iff', 'mid',
+]);
+
+// Commands that still need something after them (`\sum x`, `\left( x`).
+const OPENING_COMMANDS = new Set([
+	'left', 'big', 'Big', 'bigg', 'Bigg', 'sum', 'prod', 'int', 'iint',
+	'iiint', 'oint', 'lim', 'neg', 'lnot', 'forall', 'exists', 'nexists',
+	'quad', 'qquad', 'langle', 'lvert', 'lVert', 'lbrace',
+]);
+
+/** Whether the equation text before the cursor ends with an operand. */
+export function hasOperandBefore(before: string): boolean {
+	const text = before.trimEnd();
+	// `\begin{pmatrix}`, and `\left|` or `\left\{` (an opening, not a closing bar).
+	if (/\\begin\{[^}]*\}$|\\left\\?.$/.test(text)) return false;
+	const command = /\\([a-zA-Z]+)$/.exec(text)?.[1];
+	if (command) {
+		return !BINARY_COMMANDS.has(command) && !OPENING_COMMANDS.has(command);
+	}
+	// Digits, letters, closing brackets, `x'`, `n!`; not `+`, `=`, `{`, `&`, `^`…
+	return /[a-zA-Z0-9)\]}|!'.]$/.test(text);
+}
+
+/** Whether the equation text after the cursor starts with an operand. */
+export function hasOperandAfter(after: string): boolean {
+	const text = after.trimStart();
+	if (text.startsWith('\\\\')) return false;
+	const command = /^\\([a-zA-Z]+)/.exec(text)?.[1];
+	if (command) {
+		return !BINARY_COMMANDS.has(command) && command !== 'right' && command !== 'end';
+	}
+	return /^[a-zA-Z0-9({[|.\\]/.test(text);
 }
 
 /** LaTeX used to draw a template on its palette button. */

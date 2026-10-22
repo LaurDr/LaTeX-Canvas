@@ -246,7 +246,8 @@ export class PaletteView extends ItemView {
 		button.appendChild(renderMath(preview, false));
 		// Show the code behind each button so users pick up LaTeX as they go.
 		const code = template.latex.split(SLOT).join('…');
-		setTooltip(button, template.label === template.latex ? code : `${template.label}: ${code}`);
+		const named = !template.latex.includes(template.label);
+		setTooltip(button, named ? `${template.label}: ${code}` : code);
 
 		this.keepEditorFocus(button);
 		button.addEventListener('click', () =>

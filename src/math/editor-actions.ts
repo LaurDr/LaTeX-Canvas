@@ -12,16 +12,23 @@ import { MathTemplate } from './templates';
  * is wrapped in `$…$` so a single click always produces rendered math.
  */
 export function insertTemplate(editor: Editor, template: MathTemplate): void {
+	const doc = editor.getValue();
 	const from = editor.posToOffset(editor.getCursor('from'));
-	const inMath = findMathAt(editor.getValue(), from) !== null;
+	const to = editor.posToOffset(editor.getCursor('to'));
+	const region = findMathAt(doc, from);
+	const context = region && {
+		before: doc.slice(region.contentFrom, from),
+		after: doc.slice(to, region.contentTo),
+	};
 	const expansion = expandTemplate(
 		template.latex,
 		editor.getSelection(),
 		template.placeholder,
+		context ?? undefined,
 	);
 
-	const text = inMath ? expansion.text : `$${expansion.text}$`;
-	const shift = inMath ? 0 : 1;
+	const text = region ? expansion.text : `$${expansion.text}$`;
+	const shift = region ? 0 : 1;
 	editor.replaceSelection(text);
 	editor.setSelection(
 		editor.offsetToPos(from + shift + expansion.selectFrom),

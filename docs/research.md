@@ -181,6 +181,13 @@ environments, where a GUI helps beginners most.
   `\square` in the note. The DOM order cannot be used for this: MathJax draws
   superscripts before subscripts and upper bounds before lower ones. If tagging
   fails, the preview falls back to plain, non-clickable rendering.
+- **Context-aware operands.** Operators and relations are templates such as
+  `# \neq #`. A bare slot at the edge of a template is an operand, and it is
+  dropped when the equation already has an operand on that side of the
+  cursor (`hasOperandBefore` / `hasOperandAfter` in `src/math/latex.ts`).
+  The summand of `\sum` and `\prod` works the same way. A space is only added
+  after a command when a letter follows (`\alpha x`). A space before the
+  closing `$` would stop Obsidian from rendering inline math.
 - **Matrix size picker.** Click a cell of a 6 × 6 grid to choose rows ×
   columns, then click a bracket style (`pmatrix`, `bmatrix`, `Bmatrix`,
   `vmatrix`, `Vmatrix`, `matrix`, `cases`).

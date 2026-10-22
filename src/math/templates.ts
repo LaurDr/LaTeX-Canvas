@@ -48,9 +48,25 @@ export function matrixTemplate(
 	};
 }
 
-const symbols = (label: string, commands: string[]): TemplateCategory => ({
-	name: label,
-	templates: commands.map((latex) => ({ label: latex, latex })),
+const symbol = (latex: string): MathTemplate => ({ label: latex, latex });
+
+const symbols = (name: string, commands: string[]): TemplateCategory => ({
+	name,
+	templates: commands.map(symbol),
+});
+
+// Operators and relations get an operand slot on each side: `# \neq #`.
+// A bare slot at the edge of a template is only filled with a placeholder
+// when that side of the cursor is empty (see `expandTemplate`).
+const binary = (command: string): MathTemplate => ({
+	label: command,
+	latex: `# ${command} #`,
+});
+
+// Prefix operators like `\forall` only take an operand on their right.
+const prefix = (command: string): MathTemplate => ({
+	label: command,
+	latex: `${command} #`,
 });
 
 export const CATEGORIES: (TemplateCategory | MatrixCategory)[] = [
@@ -126,16 +142,28 @@ export const CATEGORIES: (TemplateCategory | MatrixCategory)[] = [
 		'\\psi', '\\omega', '\\Gamma', '\\Delta', '\\Theta', '\\Lambda',
 		'\\Pi', '\\Sigma', '\\Phi', '\\Psi', '\\Omega',
 	]),
-	symbols('Operators', [
-		'+', '-', '\\pm', '\\mp', '\\cdot', '\\times', '\\div', '\\circ',
-		'\\partial', '\\nabla', '\\infty', '\\cup', '\\cap', '\\setminus',
-	]),
-	symbols('Relations', [
-		'=', '\\neq', '<', '>', '\\leq', '\\geq', '\\approx', '\\equiv',
-		'\\sim', '\\propto', '\\in', '\\notin', '\\subset', '\\subseteq',
-	]),
-	symbols('Arrows & logic', [
-		'\\to', '\\leftarrow', '\\Rightarrow', '\\Leftarrow', '\\Leftrightarrow',
-		'\\mapsto', '\\forall', '\\exists', '\\neg', '\\land', '\\lor',
-	]),
+	{
+		name: 'Operators',
+		wide: true,
+		templates: [
+			...['+', '-', '\\pm', '\\mp', '\\cdot', '\\times', '\\div', '\\circ',
+				'\\cup', '\\cap', '\\setminus'].map(binary),
+			...['\\partial', '\\nabla', '\\infty'].map(symbol),
+		],
+	},
+	{
+		name: 'Relations',
+		wide: true,
+		templates: ['=', '\\neq', '<', '>', '\\leq', '\\geq', '\\approx', '\\equiv',
+			'\\sim', '\\propto', '\\in', '\\notin', '\\subset', '\\subseteq'].map(binary),
+	},
+	{
+		name: 'Arrows & logic',
+		wide: true,
+		templates: [
+			...['\\to', '\\leftarrow', '\\Rightarrow', '\\Leftarrow', '\\Leftrightarrow',
+				'\\mapsto', '\\land', '\\lor'].map(binary),
+			...['\\forall', '\\exists', '\\neg'].map(prefix),
+		],
+	},
 ];
