@@ -181,7 +181,7 @@ environments, where a GUI helps beginners most.
   `\square` in the note. The DOM order cannot be used for this: MathJax draws
   superscripts before subscripts and upper bounds before lower ones. If tagging
   fails, the preview falls back to plain, non-clickable rendering.
-- **Matrix size picker.** Hover and click a 6 × 6 grid to choose rows ×
+- **Matrix size picker.** Click a cell of a 6 × 6 grid to choose rows ×
   columns, then click a bracket style (`pmatrix`, `bmatrix`, `Bmatrix`,
   `vmatrix`, `Vmatrix`, `matrix`, `cases`).
 - Rendered math in the palette ignores the mouse except for the slots.

@@ -190,7 +190,7 @@ export class PaletteView extends ItemView {
 	}
 
 	/**
-	 * A size picker (hover to preview, click to choose rows × columns) and one
+	 * A size picker (click a cell to choose rows × columns) and one
 	 * button per bracket style, which inserts a matrix of the chosen size.
 	 */
 	private drawMatrices(parent: HTMLElement, kinds: MatrixKind[]): void {
@@ -214,7 +214,6 @@ export class PaletteView extends ItemView {
 					cls: 'latex-canvas-size-cell',
 					attr: { 'aria-label': `${row} × ${column}` },
 				});
-				el.addEventListener('mouseenter', () => paint(row, column));
 				el.addEventListener('click', () => {
 					this.matrixSize = { rows: row, columns: column };
 					paint(row, column);
@@ -222,9 +221,6 @@ export class PaletteView extends ItemView {
 				cells.push({ el, row, column });
 			}
 		}
-		grid.addEventListener('mouseleave', () =>
-			paint(this.matrixSize.rows, this.matrixSize.columns),
-		);
 		paint(this.matrixSize.rows, this.matrixSize.columns);
 
 		const buttons = parent.createDiv({ cls: 'latex-canvas-grid mod-wide' });
