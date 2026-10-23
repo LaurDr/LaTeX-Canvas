@@ -188,6 +188,25 @@ environments, where a GUI helps beginners most.
   The summand of `\sum` and `\prod` works the same way. A space is only added
   after a command when a letter follows (`\alpha x`). A space before the
   closing `$` would stop Obsidian from rendering inline math.
+- **Pointing in the preview** (`src/ui/source-map.ts`). The note stays the
+  only copy of the equation. MathJax 4 labels each rendered element with the
+  LaTeX it came from (`data-latex`), so each element is found as a substring
+  of its parent's range, which maps any rendered symbol to its exact source
+  range without rewriting the source. Details:
+  - Labels can drop whitespace (`\lim_{x\to0}`), so matching ignores it.
+  - Drawing order differs from source order, and identical scripts
+    (`x_{i}^{i}`) are told apart by the `^`/`_` in front of them.
+  - Matches inside command names (the `a` in `\frac`) are skipped.
+  - Blank or too-short labels (table rows, `{cases}`) are treated as
+    transparent, and their content is searched in the parent's range.
+  - Checked on 126 equations, including every palette template.
+  - Clicking puts the note's cursor before or after the symbol, depending on
+    which half was clicked. Focus stays in the note, so typing is ordinary
+    Obsidian editing.
+  - The preview draws a caret and selection shading from the note's
+    selection.
+  - With MathJax 3 (no labels) it falls back to tagged, clickable `\square`s
+    only.
 - **Matrix size picker.** Click a cell of a 6 × 6 grid to choose rows ×
   columns, then click a bracket style (`pmatrix`, `bmatrix`, `Bmatrix`,
   `vmatrix`, `Vmatrix`, `matrix`, `cases`).
