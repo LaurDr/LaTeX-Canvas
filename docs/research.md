@@ -200,8 +200,20 @@ environments, where a GUI helps beginners most.
   - Blank or too-short labels (table rows, `{cases}`) are treated as
     transparent, and their content is searched in the parent's range.
   - Checked on 126 equations, including every palette template.
-  - Clicking puts the note's cursor before or after the symbol, depending on
-    which half was clicked. Focus stays in the note, so typing is ordinary
+  - Clicks are resolved by position, not by which glyph was hit
+    (`src/ui/hit-test.ts`), because MathJax's glyph boxes are tiny (an `=`
+    is about 8 px tall). Every point in the equation band does something:
+    - On or within 8 px of a `□`, the click selects it.
+    - On a symbol, the caret goes to that symbol's nearer side.
+    - Elsewhere, the caret goes to the nearest edge of a symbol or of a
+      structure. Vertical distance counts double, so a click beside a
+      superscript stays at that level.
+    - Structures (`x^{2}`, `\frac{..}{..}`, `\sum_{..}^{..}`) have their own
+      edges, so a click beside `x²` lands after `x^{2}`, not inside the
+      exponent.
+    - Spots right before a `^` or `_` lose ties.
+  - A faint caret previews where a click will land, and boxes light up
+    before you click. Focus stays in the note, so typing is ordinary
     Obsidian editing.
   - The preview draws a caret and selection shading from the note's
     selection.

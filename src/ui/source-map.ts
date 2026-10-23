@@ -84,14 +84,27 @@ export function leaves(ranges: Map<HTMLElement, SourceRange>): MappedElement[] {
 }
 
 /**
- * Where to draw a caret for the source `offset`: at the edge of the symbol
- * that starts or ends there, else at the nearest symbol edge (for offsets in
- * whitespace or inside markup like `\frac{`).
+ * Where to draw a caret for the source `offset`: at the edge of the smallest
+ * element that starts or ends exactly there (a symbol, or a structure like
+ * `x^{2}` when the cursor is right after it), else at the nearest symbol edge
+ * (for offsets in whitespace or inside markup like `\frac{`).
  */
 export function caretAnchor(
 	offset: number,
 	symbols: MappedElement[],
+	structures: MappedElement[],
 ): { el: HTMLElement; side: 'left' | 'right' } | null {
+	const area = (el: HTMLElement) => {
+		const r = el.getBoundingClientRect();
+		return r.width * r.height;
+	};
+	const exact = [...symbols, ...structures]
+		.filter(({ range }) => range.from === offset || range.to === offset)
+		.sort((a, b) => area(a.el) - area(b.el))[0];
+	if (exact) {
+		return { el: exact.el, side: exact.range.from === offset ? 'left' : 'right' };
+	}
+
 	let best: { el: HTMLElement; side: 'left' | 'right'; distance: number } | null = null;
 	for (const { el, range } of symbols) {
 		for (const [edge, side] of [[range.from, 'left'], [range.to, 'right']] as const) {

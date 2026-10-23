@@ -24,6 +24,7 @@ import {
 	MAX_MATRIX_SIZE,
 	SLOT,
 } from '../math/templates';
+import { Hit, hitTest } from './hit-test';
 import { caretAnchor, leaves, MappedElement, mapRenderedSource } from './source-map';
 
 export const PALETTE_VIEW_TYPE = 'latex-canvas-palette';
@@ -50,7 +51,10 @@ export interface PreviewedEquation {
 export class PaletteView extends ItemView {
 	private previewEl?: HTMLElement;
 	private sourceEl?: HTMLElement;
+	private mathEl?: HTMLElement;
 	private caretEl?: HTMLElement;
+	// Faint caret showing where a click would put the cursor.
+	private hoverCaretEl?: HTMLElement;
 	private selectionEls: HTMLElement[] = [];
 	private equation: PreviewedEquation | null = null;
 	private shownSource: string | null | undefined;
@@ -58,6 +62,8 @@ export class PaletteView extends ItemView {
 	private symbols: MappedElement[] = [];
 	// Every mapped element, including compound ones like a whole fraction.
 	private mapped = new Map<HTMLElement, MappedElement>();
+	// Mapped structures with a meaningful start and end (`x^{2}`, `\frac{a}{b}`).
+	private structures: MappedElement[] = [];
 	// Whether symbols can be mapped (MathJax 4), so the cursor can be placed.
 	private canPlaceCursor = false;
 	private matrixSize = { rows: 2, columns: 2 };
@@ -83,19 +89,12 @@ export class PaletteView extends ItemView {
 
 		const current = root.createDiv({ cls: 'latex-canvas-current' });
 		this.previewEl = current.createDiv({ cls: 'latex-canvas-current-preview' });
-		// Capture phase: the preview handles clicks itself, before MathJax 4's
-		// own handlers on the rendered math (which would take the focus).
-		this.previewEl.addEventListener(
-			'mousedown',
-			(evt) => {
-				evt.preventDefault();
-				evt.stopPropagation();
-			},
-			{ capture: true },
-		);
-		this.previewEl.addEventListener('click', (evt) => this.onPreviewClick(evt), {
-			capture: true,
-		});
+		// The rendered math ignores the mouse (see styles.css); clicks are
+		// resolved by position, so every point of the preview means something.
+		this.keepEditorFocus(this.previewEl);
+		this.previewEl.addEventListener('click', (evt) => this.onPreviewClick(evt));
+		this.previewEl.addEventListener('mousemove', (evt) => this.showHover(this.hitAt(evt)));
+		this.previewEl.addEventListener('mouseleave', () => this.showHover(null));
 		this.sourceEl = current.createEl('code', { cls: 'latex-canvas-current-source' });
 		const nextButton = current.createEl('button', { text: 'Next empty slot' });
 		this.keepEditorFocus(nextButton);
@@ -146,8 +145,10 @@ export class PaletteView extends ItemView {
 		source: string | null,
 	): void {
 		previewEl.empty();
+		this.mathEl = undefined;
 		this.selectionEls = [];
 		this.symbols = [];
+		this.structures = [];
 		this.mapped.clear();
 		this.canPlaceCursor = false;
 
@@ -163,6 +164,11 @@ export class PaletteView extends ItemView {
 			this.canPlaceCursor = true;
 			for (const [el, range] of ranges) this.mapped.set(el, { el, range });
 			this.symbols = leaves(ranges);
+			// Braced groups are left out: a caret between `^` and `{` would
+			// be a confusing place to type.
+			this.structures = [...this.mapped.values()].filter(
+				(m) => !this.symbols.includes(m) && source[m.range.from] !== '{',
+			);
 		} else {
 			// No source labels (MathJax 3): only the boxes can be clicked,
 			// found through classes added to the source.
@@ -175,7 +181,9 @@ export class PaletteView extends ItemView {
 		}
 
 		previewEl.appendChild(math);
+		this.mathEl = math;
 		this.caretEl = previewEl.createDiv({ cls: 'latex-canvas-caret' });
+		this.hoverCaretEl = previewEl.createDiv({ cls: 'latex-canvas-caret mod-hover is-hidden' });
 		const hasSlots = this.symbols.some((s) => s.el.hasClass('latex-canvas-slot'));
 		if (this.canPlaceCursor || hasSlots) {
 			previewEl.createDiv({
@@ -206,29 +214,51 @@ export class PaletteView extends ItemView {
 		return math;
 	}
 
-	/**
-	 * A click on a box selects it; a click anywhere else in the equation puts
-	 * the note's cursor before or after the clicked symbol (by which half of
-	 * it was clicked).
-	 */
+	/** A click on or near a box selects it; anywhere else places the caret. */
 	private onPreviewClick(evt: MouseEvent): void {
-		evt.stopPropagation();
-		const source = this.shownSource;
-		// `targetNode`/`instanceOf` also work when the palette is in a popout window.
-		const target = evt.targetNode;
-		let el = target?.instanceOf(HTMLElement) ? target : target?.parentElement ?? null;
-		while (el && el !== this.previewEl && !this.mapped.has(el)) el = el.parentElement;
-		const symbol = el && this.mapped.get(el);
-		if (!symbol || source == null) return;
+		const hit = this.hitAt(evt);
+		if (hit?.kind === 'slot') this.selectInNote(hit.range.from, hit.range.to);
+		else if (hit) this.selectInNote(hit.offset, hit.offset);
+	}
 
-		const { from, to } = symbol.range;
-		if (source.slice(from, to) === PLACEHOLDER) {
-			this.selectInNote(from, to);
-		} else if (this.canPlaceCursor) {
-			const rect = symbol.el.getBoundingClientRect();
-			const offset = evt.clientX < rect.left + rect.width / 2 ? from : to;
-			this.selectInNote(offset, offset);
+	/** What a click at the mouse position would do (see `hitTest`). */
+	private hitAt(evt: MouseEvent): Hit | null {
+		const math = this.mathEl;
+		const source = this.shownSource;
+		if (!math || source == null) return null;
+		// Only the band of the equation itself, not the hint text below it.
+		const band = math.getBoundingClientRect();
+		if (evt.clientY < band.top - 16 || evt.clientY > band.bottom + 16) return null;
+		const parts = [
+			...this.symbols.map(({ el, range }) => ({
+				range,
+				box: lineRect(el),
+				isSlot: el.hasClass('latex-canvas-slot'),
+				isLeaf: true,
+				scriptFollows: /^\s*[\^_]/.test(source.slice(range.to)),
+			})),
+			...this.structures.map(({ el, range }) => ({
+				range,
+				box: lineRect(el),
+				isSlot: false,
+				isLeaf: false,
+			})),
+		];
+		return hitTest(parts, evt.clientX, evt.clientY, this.canPlaceCursor);
+	}
+
+	/** Previews a click: lights up the box, or shows a faint caret. */
+	private showHover(hit: Hit | null): void {
+		for (const { el, range } of this.symbols) {
+			el.toggleClass('is-hover', hit?.kind === 'slot' && hit.range.from === range.from);
 		}
+		this.previewEl?.toggleClass('is-over-slot', hit?.kind === 'slot');
+		const ghost = this.hoverCaretEl;
+		if (!ghost) return;
+		if (hit?.kind === 'caret') {
+			this.overlay(ghost, new DOMRect(hit.x, hit.top, 0, hit.bottom - hit.top));
+		}
+		ghost.toggleClass('is-hidden', hit?.kind !== 'caret');
 	}
 
 	/** Selects `from`..`to` (offsets within the equation) in the note. */
@@ -291,7 +321,7 @@ export class PaletteView extends ItemView {
 		}
 
 		const inEquation = equation !== null && from === to && from >= 0 && from <= equation.source.length;
-		const anchor = this.canPlaceCursor && inEquation ? caretAnchor(from, this.symbols) : null;
+		const anchor = this.canPlaceCursor && inEquation ? caretAnchor(from, this.symbols, this.structures) : null;
 		const rect = anchor && lineRect(anchor.el);
 		if (!anchor || !rect || rect.height === 0) {
 			caret.toggleClass('is-hidden', true);
