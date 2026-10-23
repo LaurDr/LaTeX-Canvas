@@ -16,13 +16,9 @@ of people who type LaTeX directly: no default hotkeys, no key remapping.
   **Next empty slot** to jump to the next one (also available as a command you
   can bind to a hotkey).
 - Hover a button to see the LaTeX behind it.
-- Live preview of the equation under the cursor, which you can **edit by
-  pointing**: click anywhere in it to put the note's cursor there, then type.
-  The preview shows a caret where the note's cursor is and shades whatever is
-  selected. Click a `□` to select it and fill it in. The keyboard stays in the
-  note, so you can switch freely between the sidebar and normal editing. (On
-  Obsidian versions before 1.14, which use MathJax 3, only the `□` can be
-  clicked.)
+- Live preview of the equation under the cursor. **Click a `□` in the preview**
+  to select that slot in the note, then type to fill it. The selected slot is
+  highlighted.
 - **Operators and relations adapt to the cursor:** each side gets a `□` only
   when it is empty. Nothing there yet gives `$□ \neq □$`; at the end of
   `$2+2$` you get `$2+2 \div □$`. `\forall`, `\exists` and `\neg` only take a
