@@ -1,0 +1,9 @@
+{
+	"id": "latex-canvas",
+	"name": "LaTeX Canvas",
+	"version": "0.0.1",
+	"minAppVersion": "1.7.2",
+	"description": "Build and edit LaTeX math equations with a point-and-click palette.",
+	"author": "LaurDr",
+	"isDesktopOnly": false
+}
