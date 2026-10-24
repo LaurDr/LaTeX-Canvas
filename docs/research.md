@@ -24,8 +24,12 @@ This repo is now based on it.
 | `version-bump.mjs`, `versions.json` | Maps each plugin version to its minimum Obsidian version |
 
 A release is a GitHub release that contains `main.js`, `manifest.json` and
-`styles.css`. Listing in the community store means opening a PR on
-`obsidianmd/obsidian-releases`.
+`styles.css`, tagged with the exact version (no `v` prefix). Since 2026,
+plugins are submitted through the dashboard at
+[community.obsidian.md](https://community.obsidian.md): sign in, link GitHub,
+and submit the repository. An automated review then checks every version.
+`obsidianmd/obsidian-releases` is now only an hourly mirror of the
+directory, so the old pull-request process no longer applies.
 
 Everything a plugin registers through `this.register*` or `this.add*` is
 cleaned up automatically on unload. That is the main lifecycle rule to follow.
@@ -203,7 +207,12 @@ Known limitations:
   CM6 syntax tree, as Latex Suite does.
 - Display math (`$$`) is never inserted automatically. Put the cursor inside a
   `$$` block first.
-- It has not yet been run inside a live Obsidian vault.
+
+Tried and reverted: an editable preview, where clicking anywhere in the
+rendered equation placed the note's cursor there (mapped through MathJax 4's
+`data-latex` labels) and a caret mirrored it. It was hard to use in practice,
+so the preview went back to clickable `□`s only. The code is in the history
+(commits `072062a` and `0ff0297`).
 
 ## 7. Suggested next steps
 
@@ -216,8 +225,8 @@ Known limitations:
 5. Structured editing of existing matrices (add or remove rows and columns,
    change bracket type). Today the size is only chosen before inserting.
 6. Add `EditorSuggest`-based learning hints.
-7. Pick a license, add a test runner (for example vitest) for `src/math/`, and
-   set up a release workflow.
+7. Add a test runner (for example vitest) for `src/math/`. The license (MIT)
+   and the release workflow are in place.
 
 ## Sources
 

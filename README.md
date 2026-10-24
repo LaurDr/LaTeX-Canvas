@@ -1,12 +1,19 @@
-# LaTeX-Canvas
+# LaTeX Canvas
 
-Obsidian plugin for building and editing LaTeX math equations with a GUI.
-It is for LaTeX beginners and occasional users, and it stays out of the way
-of people who type LaTeX directly: no default hotkeys, no key remapping.
+Build and edit LaTeX math in Obsidian with a point-and-click palette.
 
-> Early prototype. Research and design notes are in [`docs/research.md`](docs/research.md).
+LaTeX Canvas is for LaTeX beginners and people who only write an equation now
+and then. Instead of remembering commands, you click a fraction, a sum or a
+matrix, and fill in the boxes. Every button shows the LaTeX it inserts, so you
+pick up the syntax as you go. It stays out of the way of people who type LaTeX
+directly: no default hotkeys and no key remapping.
 
-## What it does today
+Your notes only ever contain plain LaTeX (`$…$` and `$$…$$`), so they keep
+working without the plugin.
+
+Research and design notes are in [`docs/research.md`](docs/research.md).
+
+## Features
 
 - **Equation palette** in the right sidebar. Open it from the ribbon (Σ), the
   command palette ("Open equation palette") or the editor's right-click menu.
@@ -26,6 +33,33 @@ of people who type LaTeX directly: no default hotkeys, no key remapping.
 - **Matrices of any size up to 6 × 6:** pick rows × columns on the size grid,
   then click a bracket style. Cases use the row count only.
 
+## Installation
+
+LaTeX Canvas needs Obsidian 1.7.2 or newer. It is built desktop-first.
+
+### From Community plugins
+
+Once the plugin is listed: open *Settings → Community plugins → Browse*,
+search for **LaTeX Canvas**, then install and enable it.
+
+### Beta versions with BRAT
+
+1. Install and enable the
+   [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) plugin.
+2. In BRAT's settings, choose **Add beta plugin** and enter
+   `LaurDr/LaTeX-Canvas`.
+3. Enable **LaTeX Canvas** under *Settings → Community plugins*.
+
+### Manually
+
+1. Download `main.js`, `manifest.json` and `styles.css` from the
+   [latest release](https://github.com/LaurDr/LaTeX-Canvas/releases/latest).
+2. Put them in `<your vault>/.obsidian/plugins/latex-canvas/`. The
+   `.obsidian` folder is hidden; on macOS, press **Cmd + Shift + .** in Finder
+   to show it.
+3. Reload Obsidian and enable **LaTeX Canvas** under
+   *Settings → Community plugins*.
+
 ## Development
 
 ```bash
@@ -35,9 +69,9 @@ npm run build   # type-check + production build
 npm run lint
 ```
 
-To try it, copy `main.js`, `manifest.json` and `styles.css` into
-`<your vault>/.obsidian/plugins/latex-canvas/`. Then enable **LaTeX Canvas**
-under *Settings → Community plugins*.
+To try a build, copy `main.js`, `manifest.json` and `styles.css` into
+`<your vault>/.obsidian/plugins/latex-canvas/`, or link the repository folder
+there and run `npm run dev`.
 
 Layout:
 
@@ -49,3 +83,22 @@ src/
   math/latex.ts         pure logic: template expansion, $…$ detection, slots
   math/editor-actions.ts  glue between the logic and Obsidian's Editor
 ```
+
+### Releasing
+
+1. On `main`, set `minAppVersion` in `manifest.json` if newer Obsidian APIs are
+   used, then run `npm version patch` (or `minor` / `major`). This updates
+   `package.json`, `manifest.json` and `versions.json`, commits, and creates a
+   tag named after the version (no `v` prefix).
+2. Push the commit and the tag: `git push && git push --tags`.
+3. The *Release Obsidian plugin* workflow builds the plugin and creates a
+   **draft** release with `main.js`, `manifest.json` and `styles.css`
+   attached. Review it on GitHub and publish it.
+
+The community directory picks up new releases on its own once the plugin is
+listed. The first listing is requested at
+[community.obsidian.md](https://community.obsidian.md).
+
+## License
+
+[MIT](LICENSE)
