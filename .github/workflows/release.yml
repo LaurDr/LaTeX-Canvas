@@ -1,7 +1,12 @@
 name: Release Obsidian plugin
 
+# Drafts a GitHub release for the version in manifest.json, the first time
+# that version reaches main (after `npm version` in a pull request) or a tag
+# for it is pushed. Publishing the draft creates the tag, if needed.
 on:
     push:
+        branches:
+            - main
         tags:
             - '*'
 
@@ -15,23 +20,46 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - name: Check for a new version
+              id: version
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  version=$(jq -r .version manifest.json)
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+
+                  # Drafts are included, so a draft is never created twice.
+                  if gh release list --limit 1000 --json tagName --jq '.[].tagName' | grep -qxF "$version"; then
+                      echo "A release for $version already exists, nothing to do."
+                      echo "release=false" >> "$GITHUB_OUTPUT"
+                  elif [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$version" ]; then
+                      echo "::error::Tag $GITHUB_REF_NAME does not match the version in manifest.json ($version)."
+                      exit 1
+                  else
+                      echo "release=true" >> "$GITHUB_OUTPUT"
+                  fi
+
             - name: Use Node.js
+              if: steps.version.outputs.release == 'true'
               uses: actions/setup-node@v6
               with:
                   node-version: 24
                   cache: 'npm'
 
             - name: Build plugin
+              if: steps.version.outputs.release == 'true'
               run: |
                   npm ci
                   npm run build
 
             - name: Check for optional styles
+              if: steps.version.outputs.release == 'true'
               id: styles
               run: |
                   [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
 
             - name: Attest build provenance
+              if: steps.version.outputs.release == 'true'
               uses: actions/attest@v4
               with:
                   subject-path: |
@@ -39,12 +67,13 @@ jobs:
                       ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
 
             - name: Create release
+              if: steps.version.outputs.release == 'true'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VERSION: ${{ steps.version.outputs.version }}
               run: |
-                  tag="${GITHUB_REF#refs/tags/}"
-
-                  gh release create "$tag" \
-                    --title="$tag" \
+                  gh release create "$VERSION" \
+                    --title="$VERSION" \
+                    --target="$GITHUB_SHA" \
                     --draft \
                     main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}

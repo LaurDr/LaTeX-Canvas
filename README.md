@@ -90,14 +90,17 @@ src/
 
 ### Releasing
 
-1. On `main`, set `minAppVersion` in `manifest.json` if newer Obsidian APIs are
-   used, then run `npm version patch` (or `minor` / `major`). This updates
-   `package.json`, `manifest.json` and `versions.json`, commits, and creates a
-   tag named after the version (no `v` prefix).
-2. Push the commit and the tag: `git push && git push --tags`.
-3. The *Release Obsidian plugin* workflow builds the plugin and creates a
-   **draft** release with `main.js`, `manifest.json` and `styles.css`
-   attached. Review it on GitHub and publish it.
+1. In a branch, set `minAppVersion` in `manifest.json` if newer Obsidian APIs
+   are used, then run `npm version patch --no-git-tag-version` (or `minor` /
+   `major`). This updates `package.json`, `manifest.json` and `versions.json`.
+   Commit, open a pull request and merge it.
+2. When the new version reaches `main`, the *Release Obsidian plugin* workflow
+   builds the plugin and creates a **draft** release named after the version
+   (no `v` prefix), with `main.js`, `manifest.json` and `styles.css` attached.
+3. Review the draft on GitHub and publish it. Publishing creates the tag.
+
+Pushing a tag that matches the version (`git push origin 0.2.0`) also drafts
+a release, for releases made without a pull request.
 
 The community directory picks up new releases on its own once the plugin is
 listed. The first listing is requested at
