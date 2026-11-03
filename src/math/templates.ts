@@ -146,8 +146,9 @@ export const CATEGORIES: (TemplateCategory | MatrixCategory)[] = [
 		name: 'Operators',
 		wide: true,
 		templates: [
-			...['+', '-', '\\pm', '\\mp', '\\cdot', '\\times', '\\div', '\\circ',
-				'\\cup', '\\cap', '\\setminus'].map(binary),
+			...['+', '-', '\\pm', '\\mp', '\\cdot', '\\times', '\\div', '\\circ'].map(
+				binary,
+			),
 			...['\\partial', '\\nabla', '\\infty'].map(symbol),
 		],
 	},
@@ -155,15 +156,25 @@ export const CATEGORIES: (TemplateCategory | MatrixCategory)[] = [
 		name: 'Relations',
 		wide: true,
 		templates: ['=', '\\neq', '<', '>', '\\leq', '\\geq', '\\approx', '\\equiv',
-			'\\sim', '\\propto', '\\in', '\\notin', '\\subset', '\\subseteq'].map(binary),
+			'\\sim', '\\propto'].map(binary),
 	},
 	{
-		name: 'Arrows & logic',
+		name: 'Sets & logic',
 		wide: true,
 		templates: [
-			...['\\to', '\\leftarrow', '\\Rightarrow', '\\Leftarrow', '\\Leftrightarrow',
-				'\\mapsto', '\\land', '\\lor'].map(binary),
-			...['\\forall', '\\exists', '\\neg'].map(prefix),
+			...['\\in', '\\notin', '\\ni', '\\subset', '\\subseteq', '\\supset',
+				'\\supseteq', '\\cup', '\\cap', '\\setminus', '\\mid', '\\land',
+				'\\lor'].map(binary),
+			...['\\forall', '\\exists', '\\nexists', '\\neg'].map(prefix),
+			...['\\emptyset', '\\mathbb{N}', '\\mathbb{Z}', '\\mathbb{Q}', '\\mathbb{R}',
+				'\\mathbb{C}'].map(symbol),
+			{ label: 'Set builder', latex: '\\{ # \\mid # \\}' },
 		],
+	},
+	{
+		name: 'Arrows',
+		wide: true,
+		templates: ['\\to', '\\leftarrow', '\\Rightarrow', '\\Leftarrow',
+			'\\Leftrightarrow', '\\mapsto'].map(binary),
 	},
 ];

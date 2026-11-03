@@ -23,6 +23,10 @@ Research and design notes are in [`docs/research.md`](docs/research.md).
   **Next empty slot** to jump to the next one (also available as a command you
   can bind to a hotkey).
 - Hover a button to see the LaTeX behind it.
+- Categories: structures (fractions, roots, scripts), big operators (sums,
+  integrals, limits), brackets, accents, matrices & cases, functions, Greek
+  letters, operators, relations, **sets & logic** (`∈`, `⊆`, `∪`, `∀`, `∃`,
+  `ℝ`, set builder `{□ ∣ □}`, …) and arrows.
 - Live preview of the equation under the cursor. **Click a `□` in the preview**
   to select that slot in the note, then type to fill it. The selected slot is
   highlighted.

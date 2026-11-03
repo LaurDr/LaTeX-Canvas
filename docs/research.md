@@ -167,7 +167,8 @@ environments, where a GUI helps beginners most.
 
 - **Equation palette** in the right sidebar (`src/ui/palette-view.ts`). It has
   categorized buttons (structures, big operators, brackets, accents, matrices
-  and cases, functions, Greek letters, operators, relations, arrows and logic),
+  and cases, functions, Greek letters, operators, relations, sets and logic,
+  arrows),
   each rendered with Obsidian's own MathJax. Hovering a button shows its LaTeX.
 - **Clicking a button inserts at the cursor.**
   - Outside math, the result is wrapped in `$…$`.

@@ -135,19 +135,17 @@ export class PaletteView extends ItemView {
 			return;
 		}
 
-		let math = renderMath(tagPlaceholders(source), true);
-		if (math.querySelector('mjx-merror, [data-mml-node="merror"]')) {
-			// The equation has an error (or tagging is unsupported): show it
-			// as is, without clickable slots.
-			math = renderMath(source, true);
-		} else {
-			placeholderOffsets(source).forEach((offset, n) => {
-				const el = math.querySelector<HTMLElement>(`.${SLOT_CLASS_PREFIX}${n}`);
-				if (!el) return;
-				el.addClass('latex-canvas-slot');
-				el.addEventListener('click', () => this.selectSlot(offset));
-				this.slots.push({ el, offset });
+		let math: HTMLElement;
+		try {
+			math = this.renderWithSlots(source);
+		} catch (error) {
+			// A font is still loading: show the source until it is ready.
+			previewEl.setText(source);
+			sourceEl.setText(source);
+			void retryAfterFontLoad(error).then(() => {
+				if (this.shownSource === source) this.renderPreview(previewEl, sourceEl, source);
 			});
+			return;
 		}
 		previewEl.appendChild(math);
 		if (this.slots.length > 0) {
@@ -158,6 +156,28 @@ export class PaletteView extends ItemView {
 		}
 		sourceEl.setText(source);
 		void finishRenderMath();
+	}
+
+	/**
+	 * Renders `source` with each placeholder tagged so its box can be found
+	 * and clicked. Throws while MathJax is loading a font (see
+	 * `retryAfterFontLoad`).
+	 */
+	private renderWithSlots(source: string): HTMLElement {
+		const math = renderMath(tagPlaceholders(source), true);
+		if (math.querySelector('mjx-merror, [data-mml-node="merror"]')) {
+			// The equation has an error (or tagging is unsupported): show it
+			// as is, without clickable slots.
+			return renderMath(source, true);
+		}
+		placeholderOffsets(source).forEach((offset, n) => {
+			const el = math.querySelector<HTMLElement>(`.${SLOT_CLASS_PREFIX}${n}`);
+			if (!el) return;
+			el.addClass('latex-canvas-slot');
+			el.addEventListener('click', () => this.selectSlot(offset));
+			this.slots.push({ el, offset });
+		});
+		return math;
 	}
 
 	/** Selects the placeholder at `offset` (within the equation) in the note. */
@@ -243,7 +263,19 @@ export class PaletteView extends ItemView {
 		const button = parent.createEl('button', { cls: 'latex-canvas-button' });
 		// Braces make the preview one unit, which MathJax 4 never line-breaks.
 		const preview = `{${previewLatex(template.latex, template.placeholder)}}`;
-		button.appendChild(renderMath(preview, false));
+		const show = (retry = false) => {
+			try {
+				button.prepend(renderMath(preview, false));
+				// The first render is flushed with the others in `onOpen`.
+				if (retry) void finishRenderMath();
+			} catch (error) {
+				void retryAfterFontLoad(error).then(
+					() => show(true),
+					() => button.setText(template.latex),
+				);
+			}
+		};
+		show();
 		// Show the code behind each button so users pick up LaTeX as they go.
 		const code = template.latex.split(SLOT).join('…');
 		const named = !template.latex.includes(template.label);
@@ -268,4 +300,16 @@ export class PaletteView extends ItemView {
 			new Notice('Open a note to insert math.');
 		}
 	}
+}
+
+/**
+ * MathJax 4 loads some fonts on first use (`\mathbb{R}`, for example) and,
+ * until a font is loaded, throws a "retry" error carrying a promise instead of
+ * returning the rendered math. Returns that promise so rendering can be tried
+ * again; any other error is rethrown.
+ */
+function retryAfterFontLoad(error: unknown): Promise<unknown> {
+	const retry = (error as { retry?: unknown } | null)?.retry;
+	if (retry instanceof Promise) return retry;
+	throw error;
 }
